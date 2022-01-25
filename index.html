@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Parse</title>
+</head>
+<body>
+    <h1>Excel File here...</h1>
+    <input id="file" type="file" name="excel" accept=".xlsx , .xls , .csv">
+    <input type="text" name="columnParse" id="columnParse" placeholder="Column To Parse">
+    <button id="submit">Submit</button>
+
+    <div id="ParseShower" style="display: none;">
+        <h1>Parse here</h1>
+        <p id="parsedText">No Text Found</p>
+
+        <button id="backtext">Back</button>
+        <button id="nextText">Next</button>
+    </div>
+
+</body>
+<script>
+    var file_input = document.getElementById('file')
+    var columnParse = document.getElementById('columnParse')
+    var submitBtn = document.getElementById('submit')
+    var file_btn = document.createElement('button')
+    var parse_btn = document.createElement('button')
+    var columnParseBtn = document.createElement('button')
+    var parsedText = document.getElementById('parsedText')
+    var ParseShower = document.getElementById('ParseShower')
+    var nextText = document.getElementById('nextText')
+    var backtext = document.getElementById('backtext')
+    
+
+    var data_in_json = []
+    var index = 0
+    var columnName = ''
+    var indexes_allowed = []
+
+    function ChangeParsedtext(index) {
+        parsedText.innerText = ''
+
+        for (let j = 0; j < data_in_json.length; j++) {
+            const temp = data_in_json[j];
+            if(columnName in temp){
+                indexes_allowed.push(j)
+            }
+            
+        }
+
+        if (index == 0) {
+            index = indexes_allowed[0]
+        }
+        const element = data_in_json[index];
+        if(columnName in element){
+            for (let t = 0; t < element[columnName].length; t++) {
+                const elm = element[columnName][t];
+                parsedText.innerText += '| '+ elm+' | '
+            }
+        }
+    }
+
+    submitBtn.addEventListener('click',(event)=>{
+        event.preventDefault()
+
+        //////////////////////
+        
+        data = new FormData()
+        data.append('excel_file' , file_input.files[0])
+        options = {
+            method: 'POST',
+            body: data
+        }
+        fetch('/',options).then((res)=>{
+            return res.json()
+        }).then((res_2)=>{
+            console.log(res_2);
+        }).then(()=>{
+
+            //////////////////////
+            options = {
+            method : 'POST',
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({fileName:file_input.files[0].name})
+        }
+            console.log(options);
+            
+            fetch('/excelParse',options).then((res)=>{
+                return res.json()
+            }).then((res_2)=>{
+                data_in_json = res_2.data
+            }).then(()=>{
+
+                /////////////////////////
+                window.setTimeout(()=>{
+                    ParseShower.style.display = 'block';
+                    columnName = columnParse.value
+                    index = 0;
+                    ChangeParsedtext(index)
+                },1000)
+            })
+        })
+    })
+
+
+
+    nextText.addEventListener('click',(event)=>{
+        event.preventDefault()
+        if (index == indexes_allowed[indexes_allowed.length - 1]){
+            index = 0
+            ChangeParsedtext(index)
+        }else{
+            index += 1
+            ChangeParsedtext(index)
+        }
+    })
+    backtext.addEventListener('click',(event)=>{
+        event.preventDefault()
+        if (index == indexes_allowed[0]){
+            index = indexes_allowed[indexes_allowed.length - 1]
+            ChangeParsedtext(index)
+        }else {
+            index += -1
+            ChangeParsedtext(index)
+        }
+    })
+
+
+</script>
+
+</html>
